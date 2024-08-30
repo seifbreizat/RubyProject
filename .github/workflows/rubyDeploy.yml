@@ -28,6 +28,54 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run a one-line script
         run: echo Hello, world!
+        name: Deploy Rails App
+
+on:
+  push:
+    branches:
+      - main  # This triggers the workflow on push to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1 # Specify your Ruby version
+
+    - name: Install dependencies
+      run: |
+        gem install bundler
+        bundle install
+
+    - name: Set up PostgreSQL
+      uses: harmon758/postgresql-action@v1.1.0
+      with:
+        postgresql version: '12'
+
+    - name: Install Yarn dependencies
+      run: yarn install
+
+    - name: Precompile assets
+      run: |
+        RAILS_ENV=production bundle exec rake assets:precompile
+
+    - name: Run database migrations
+      run: |
+        RAILS_ENV=production bundle exec rails db:migrate
+
+    - name: Deploy to Heroku
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      run: |
+        git remote add heroku https://git.heroku.com/<your-heroku-app-name>.git
+        git push heroku main:master
+
 
       # Runs a set of commands using the runners shell
       - name: Run a multi-line script
